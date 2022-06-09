@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Projekt</title>
+</head>
+<body>
+<h1>Obsługa zamówień</h1>
+<div>
+    <h2>Dodawanie zamówień</h2>
+    Id użytkownika<input id="post_user_id"><br>
+    Opis produktu<input class="post_item_description"><br>
+    Opis produktu<input class="post_item_description"><br>
+    Opis produktu<input class="post_item_description"><br>
+    Opis produktu<input class="post_item_description"><br>
+    Opis produktu<input class="post_item_description"><br>
+    Imię<input id="post_first_name"><br>
+    Nazwisko<input id="post_last_name"><br>
+    Ulica<input id="post_street_name"><br>
+    Miasto<input id="post_city_name"><br>
+    Kod pocztowy<input id="post_postal_code"><br>
+    <button onclick="postOrder()">Wyślij</button>
+</div>
+<div>
+    <h2>Edycja zamówienia</h2>
+    Id zamówienia<input id="edit_order_id"><br>
+    Opis produktu<input class="edit_item_description"><br>
+    Opis produktu<input class="edit_item_description"><br>
+    Opis produktu<input class="edit_item_description"><br>
+    Opis produktu<input class="edit_item_description"><br>
+    Opis produktu<input class="edit_item_description"><br>
+    Imię<input id="edit_first_name"><br>
+    Nazwisko<input id="edit_last_name"><br>
+    Ulica<input id="edit_street_name"><br>
+    Miasto<input id="edit_city_name"><br>
+    Kod pocztowy<input id="edit_postal_code"><br>
+    Zaakceptowane<input type="checkbox" id="edit_accepted"><br>
+    <button onclick="editOrder()">Wyślij</button>
+</div>
+<div>
+    <h2>Anulowanie zamówienia</h2>
+    Id zamówienia<input id="delete_order_id"><br>
+    <button onclick="deleteOrder()">Wyślij</button>
+</div>
+<div>
+    <h2>Istniejące zamówienia</h2>
+    {% for order in active_orders.orders %}
+        <ul>
+            <li>id {{ order.id }}</li>
+            <li>User id {{ order.userId }}</li>
+            <li>Cena {{ order.totalPrice }}</li>
+            <li>
+                <ul>
+                    <li>Imię {{ order.billingAddress.first_name }}</li>
+                    <li>Nazwisko {{ order.billingAddress.last_name }}</li>
+                    <li>Ulica {{ order.billingAddress.street_name }}</li>
+                    <li>Miasto {{ order.billingAddress.city_name }}</li>
+                    <li>Kod pocztowy {{ order.billingAddress.postal_code }}</li>
+                </ul>
+            </li>
+            <li>Data dodania {{ order.creationDate.date }}</li>
+            <li>Zaakceptowane {{ order.accepted }}</li>
+        </ul>
+    {% endfor %}
+</div>
+</body>
+<script>
+    async function postData(url = '', data = {}) {
+        const response = await fetch(url, {
+            method: 'POST',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            redirect: 'follow',
+            referrerPolicy: 'no-referrer',
+            body: JSON.stringify(data)
+        });
+        return response.json();
+    }
+
+    async function patchData(url = '', data = {}) {
+        const response = await fetch(url, {
+            method: 'PATCH',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            redirect: 'follow',
+            referrerPolicy: 'no-referrer',
+            body: JSON.stringify(data)
+        });
+        return response.json();
+    }
+
+    async function deleteData(url = '', data = {}) {
+        const response = await fetch(url, {
+            method: 'DELETE',
+            mode: 'cors',
+            cache: 'no-cache',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            redirect: 'follow',
+            referrerPolicy: 'no-referrer',
+            body: JSON.stringify(data)
+        });
+        return response.json();
+    }
+
+    function editOrder() {
+        let data = {};
+
+        let items = [];
+        let itemsRaw = document.querySelectorAll(".edit_item_description");
+
+        for (let i = 0; i < itemsRaw.length; i++) {
+            let item = itemsRaw[i];
+            if (item.value !== "") {
+                items.push({"description": item.value})
+            }
+        }
+
+        if (items.length > 0) {
+            data["order_items"] = items;
+        }
+
+        if (
+            document.querySelector("#edit_first_name").value !== "" &&
+            document.querySelector("#edit_last_name").value !== "" &&
+            document.querySelector("#edit_street_name").value !== "" &&
+            document.querySelector("#edit_city_name").value !== "" &&
+            document.querySelector("#edit_postal_code").value !== ""
+        ) {
+            data["billing_address"] = {
+                "first_name": document.querySelector("#edit_first_name").value,
+                "last_name": document.querySelector("#edit_last_name").value,
+                "street_name": document.querySelector("#edit_street_name").value,
+                "city_name": document.querySelector("#edit_city_name").value,
+                "postal_code": document.querySelector("#edit_postal_code").value,
+            };
+        }
+
+        if (
+            document.querySelector("#edit_accepted").value !== ""
+        ) {
+            data["accepted"] = document.querySelector("#edit_accepted").value;
+        }
+
+        patchData(`/api/orders/${document.querySelector("#edit_order_id").value}`, data).then(data => {
+            alert(data.message);
+        });
+
+    }
+
+    function postOrder() {
+        let items = [];
+        let itemsRaw = document.querySelectorAll(".post_item_description");
+
+        for (let i = 0; i < itemsRaw.length; i++) {
+            let item = itemsRaw[i];
+            if (item.value !== "") {
+                items.push({"description": item.value})
+            }
+        }
+
+        let data = {
+            "user_id": document.querySelector("#post_user_id").value,
+            "order_items": items,
+            "billing_address": {
+                "first_name": document.querySelector("#post_first_name").value,
+                "last_name": document.querySelector("#post_last_name").value,
+                "street_name": document.querySelector("#post_street_name").value,
+                "city_name": document.querySelector("#post_city_name").value,
+                "postal_code": document.querySelector("#post_postal_code").value,
+            }
+        }
+
+        postData('/api/orders', data).then(data => {
+            alert(data.message);
+        });
+    }
+
+    function deleteOrder() {
+        deleteData(`/api/orders/${document.querySelector("#delete_order_id").value}`).then(data => {
+            alert(data.message);
+        });
+    }
+
+</script>
+</html>
